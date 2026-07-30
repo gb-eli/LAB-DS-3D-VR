@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#050b16" />
+  <meta name="description" content="Plataforma holográfica 3D com biblioteca educacional, jogos corporais, sensores Web e aplicativos Android VR offline." />
+  <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(), geolocation=()" />
+  <title>HoloMotion Lab DS 4.2</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <noscript>Este laboratório precisa de JavaScript habilitado.</noscript>
+
+  <div id="app" class="app" data-mode="home">
+    <header class="topbar">
+      <div class="brand" aria-label="HoloMotion Lab DS">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="brand-copy">
+          <strong>HOLOMOTION LAB</strong>
+          <small>Visão computacional · 3D · movimento</small>
+        </div>
+      </div>
+      <div class="top-status" aria-live="polite">
+        <button id="appStoreButton" class="store-chip" type="button" aria-label="Abrir aplicativos VR" title="Aplicativos Web e Android VR"><span>⬡</span><b>Apps VR</b></button>
+        <button id="versionButton" class="version-chip" type="button" aria-label="Abrir versões e créditos" title="Versões, novidades e créditos"><span>v</span><b id="appVersionLabel">4.3.0</b></button>
+        <span id="cameraStatus" class="status-pill" data-state="off" aria-label="Câmera desligada" title="Câmera desligada"><i></i><span>Câmera desligada</span></span>
+        <span id="fpsBadge" class="status-pill compact">FPS --</span>
+        <button id="fullscreenButton" class="icon-button" type="button" title="Tela cheia" aria-label="Alternar tela cheia">⛶</button>
+      </div>
+    </header>
+
+    <main id="stage" class="stage" aria-label="Área interativa do laboratório">
+      <video id="cameraVideo" class="camera-feed" autoplay muted playsinline></video>
+      <canvas id="threeCanvas" class="layer layer-3d" aria-label="Cena holográfica 3D"></canvas>
+      <canvas id="gameCanvas" class="layer layer-game" aria-label="Elementos dos jogos"></canvas>
+      <canvas id="auraCanvas" class="layer layer-aura" aria-label="Aura holográfica e partículas corporais"></canvas>
+      <canvas id="saberCanvas" class="layer layer-saber" aria-label="Sabres e alvos energéticos"></canvas>
+      <canvas id="drawCanvas" class="layer layer-draw" aria-label="Desenho no ar"></canvas>
+      <canvas id="visionCanvas" class="layer layer-vision" aria-label="Esqueletos e pontos reconhecidos"></canvas>
+      <div class="ambient-grid" aria-hidden="true"></div>
+      <div class="scanlines" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+
+      <section id="welcomePanel" class="welcome-panel surface panel-visible" aria-labelledby="welcomeTitle">
+        <div class="welcome-copy">
+          <div class="eyebrow">HOLOMOTION ENGINE <span id="welcomeVersionLabel">4.3.0</span> · 100% FRONT-END</div>
+          <h1 id="welcomeTitle">Transforme seu corpo em um controle holográfico</h1>
+          <p>Explore o Sistema Solar, Terra, hardware, drones, robôs, vulcões, cavernas e monumentos; aprenda movimentos, dance, alongue, use sabres holográficos, treine Libras e participe de jogos corporais. A câmera é processada no próprio aparelho.</p>
+        </div>
+        <div class="feature-strip" aria-label="Experiências disponíveis">
+          <article><span>⬡</span><div><b>Holo Explorer</b><small>Nove exposições educacionais</small></div><em class="feature-version" data-component-version="explorer"></em></article>
+          <article><span>✦</span><div><b>Jogos corporais</b><small>Uma ou duas pessoas</small></div><em class="feature-version" data-component-version="catch"></em></article>
+          <article><span>☝</span><div><b>Mãos detalhadas</b><small>21 pontos e gestos</small></div><em class="feature-version" data-component-version="hands"></em></article>
+          <article><span>◉</span><div><b>Rosto</b><small>Olhos, boca e expressão</small></div><em class="feature-version" data-component-version="faceSensor"></em></article>
+        </div>
+        <div class="privacy-note">
+          <span aria-hidden="true">⌾</span>
+          <div><b>Processamento local e privado</b><small>O projeto não grava vídeo, áudio ou fotos. Somente preferências, calibração e recordes ficam no navegador.</small></div>
+        </div>
+        <div class="welcome-actions">
+          <button id="startCameraButton" class="primary-button" type="button">Ativar câmera e iniciar</button>
+          <button id="demoButton" class="secondary-button" type="button">Testar com mouse ou toque</button>
+        </div>
+        <div class="welcome-meta"><div class="welcome-links"><button id="welcomeStoreButton" class="quiet-button emphasized" type="button">Explorar aplicativos VR</button><button id="welcomeVersionButton" class="quiet-button" type="button">Versões e créditos</button></div><span id="welcomeReleaseSummary">Aplicativos Web e Android</span></div>
+        <p id="compatibilityText" class="compatibility">Verificando compatibilidade…</p>
+      </section>
+
+      <section id="loadingPanel" class="loading-panel surface" aria-live="polite" aria-hidden="true">
+        <div class="holo-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div>
+          <h2 id="loadingTitle">Preparando laboratório</h2>
+          <p id="loadingMessage">Inicializando componentes gráficos…</p>
+          <div class="progress-track"><div id="loadingProgress" class="progress-value"></div></div>
+        </div>
+      </section>
+
+      <section id="hud" class="hud surface" aria-live="polite">
+        <div class="hud-heading">
+          <span id="hudIcon" aria-hidden="true">◈</span>
+          <div><small id="hudModeShort">MODO ATUAL</small><b id="hudMode">Holo Sandbox</b></div>
+        </div>
+        <p id="hudObjective">Faça pinça sobre o objeto para segurá-lo.</p>
+        <div class="hud-metrics">
+          <div><small>PONTOS</small><strong id="scoreValue">0</strong></div>
+          <div><small>COMBO</small><strong id="comboValue">0×</strong></div>
+          <div><small>PRECISÃO</small><strong id="accuracyValue">--</strong></div>
+          <div class="optional-metric"><small>TEMPO</small><strong id="timeValue">--</strong></div>
+        </div>
+      </section>
+
+      <section id="explorerPanel" class="context-card explorer-card surface hidden" aria-live="polite">
+        <span id="explorerIcon" class="context-icon">☀</span>
+        <div><small id="explorerCategory">ESPAÇO · EXPOSIÇÃO 1/9</small><b id="explorerTitle">Sistema Solar</b><p id="explorerSummary">Modelo orbital compacto com Sol, oito planetas e trajetórias animadas.</p></div>
+        <div class="academy-meter"><span id="explorerState">ANIMADO</span><small id="explorerCounter">1/9</small></div>
+      </section>
+
+      <section id="gestureChallenge" class="context-card surface hidden" aria-live="polite">
+        <span class="context-icon">☝</span>
+        <div><small>GESTO SOLICITADO</small><b id="gestureChallengeName">Mão aberta</b><p id="gestureChallengeHint">Abra todos os dedos.</p></div>
+        <div class="hold-ring"><span id="gestureProgress">0%</span></div>
+      </section>
+
+      <section id="academyPanel" class="context-card academy-card surface hidden" aria-live="polite">
+        <span id="academyIcon" class="context-icon">◎</span>
+        <div><small id="academyCategory">TREINAMENTO</small><b id="academyName">Mão aberta</b><p id="academyHint">Siga a demonstração e mantenha o movimento.</p></div>
+        <div class="academy-meter"><span id="academyProgress">0%</span><small id="academyStepCount">1/12</small></div>
+      </section>
+
+      <section id="sequencePanel" class="context-card sequence-card surface hidden" aria-live="polite">
+        <span class="context-icon">⌘</span>
+        <div><small>SEQUÊNCIA · <b id="sequenceRound">RODADA 1</b></small><div id="sequenceChips" class="sequence-chips"></div><p id="sequenceHint">Repita os movimentos na ordem apresentada.</p></div>
+        <div class="academy-meter"><span id="sequenceProgress">0/2</span><small>MEMÓRIA</small></div>
+      </section>
+
+      <section id="auraPanel" class="context-card aura-card surface hidden" aria-live="polite">
+        <span class="context-icon">✺</span>
+        <div><small>ENERGIA CORPORAL</small><b id="auraLevel">NÍVEL 0 · INICIAL</b><p>Movimente braços e mãos; abra os braços, pule ou bata palmas para ganhar bônus.</p></div>
+        <div class="aura-meter"><i id="auraMeterFill"></i><span id="auraEnergy">0%</span></div>
+      </section>
+
+
+      <section id="bodyChallengePanel" class="context-card body-card surface hidden" aria-live="polite">
+        <span id="bodyChallengeIcon" class="context-icon">◆</span>
+        <div><small>DESAFIO CORPORAL · <b id="bodyChallengeRound">RODADA 1</b></small><b id="bodyChallengeName">Abra os braços</b><p id="bodyChallengeHint">Execute o comando antes do tempo acabar.</p></div>
+        <div class="academy-meter"><span id="bodyChallengeProgress">0%</span><small id="bodyChallengeClock">45s</small></div>
+      </section>
+
+      <section id="dancePanel" class="context-card dance-card surface hidden" aria-live="polite">
+        <span class="context-icon">♫</span>
+        <div><small>DANCE MIRROR · <b id="danceBpm">78 BPM</b></small><div id="danceChips" class="sequence-chips"></div><p id="danceHint">Acompanhe o movimento destacado no ritmo.</p></div>
+        <div class="academy-meter"><span id="danceProgress">0%</span><small id="danceStep">1/4</small></div>
+      </section>
+
+      <section id="stretchPanel" class="context-card stretch-card surface hidden" aria-live="polite">
+        <span id="stretchIcon" class="context-icon">↟</span>
+        <div><small>ALONGAMENTO RECREATIVO</small><b id="stretchName">Alongue para cima</b><p id="stretchHint">Movimente-se lentamente e sem forçar.</p></div>
+        <div class="academy-meter"><span id="stretchProgress">0%</span><small id="stretchStep">1/7</small></div>
+      </section>
+
+      <section id="saberPanel" class="context-card saber-card surface hidden" aria-live="polite">
+        <span class="context-icon">╱</span>
+        <div><small>SABRE DE ENERGIA</small><b id="saberStatus">Sabres preparados</b><p>Use os antebraços para cortar os núcleos energéticos.</p></div>
+        <div class="academy-meter"><span id="saberCombo">0×</span><small>COMBO</small></div>
+      </section>
+
+      <section id="librasPanel" class="context-card libras-card surface hidden" aria-live="polite">
+        <span id="librasLetter" class="context-icon letter-icon">A</span>
+        <div class="libras-context-copy">
+          <small>LIBRAS LAB · DATILOLOGIA EXPERIMENTAL</small>
+          <b id="librasName">Letra A</b>
+          <p id="librasHint">Observe a orientação e reproduza a configuração da mão.</p>
+          <div id="librasSequence" class="libras-sequence"></div>
+          <div class="libras-feedback-line"><span id="librasFeedback">Aguardando a mão</span><small id="librasMastery">MAESTRIA 0</small></div>
+        </div>
+        <div class="academy-meter"><span id="librasProgress">0%</span><small id="librasScore">0 PTS</small><em id="librasAccuracy">100%</em></div>
+      </section>
+
+      <section id="posePanel" class="context-card pose-card surface hidden" aria-live="polite">
+        <span id="poseIcon" class="context-icon">┼</span>
+        <div><small>POSE ATUAL</small><b id="poseName">Pose em T</b><p id="poseHint">Abra os braços na altura dos ombros.</p></div>
+        <button id="nextPoseButton" class="mini-button" type="button">Próxima</button>
+      </section>
+
+      <section id="facePanel" class="context-card face-card surface hidden" aria-live="polite">
+        <span class="context-icon">◉</span>
+        <div><small>REAÇÃO FACIAL</small><b id="faceExpression">Aguardando rosto</b><p id="faceHint">Abra a boca para ampliar o reator.</p></div>
+        <div class="face-bars" aria-label="Indicadores faciais">
+          <i id="faceSmileBar" title="Sorriso"></i><i id="faceJawBar" title="Boca"></i><i id="faceBlinkBar" title="Piscar"></i>
+        </div>
+      </section>
+
+      <section id="calibrationTip" class="calibration-tip surface hidden">
+        <span class="calibration-figure" aria-hidden="true">⌾</span>
+        <div><b>Melhore o enquadramento</b><span>Use boa iluminação e mantenha a parte necessária do corpo dentro da imagem.</span></div>
+      </section>
+
+      <div id="handCursor" class="hand-cursor" aria-hidden="true"><span></span><i></i></div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <nav id="modeDock" class="mode-dock surface" aria-label="Modos do laboratório">
+        <button class="mode-button active" type="button" data-mode-target="explorer"><span>⬡</span><b>Explorar</b><small class="mode-version" data-mode-version="explorer"></small></button>
+        <button class="mode-button" type="button" data-mode-target="sandbox"><span>◈</span><b>3D</b><small class="mode-version" data-mode-version="sandbox"></small></button>
+        <button class="mode-button" type="button" data-mode-target="catch"><span>✦</span><b>Formas</b><small class="mode-version" data-mode-version="catch"></small></button>
+        <button class="mode-button" type="button" data-mode-target="draw"><span>⌁</span><b>Desenho</b><small class="mode-version" data-mode-version="draw"></small></button>
+        <button class="mode-button" type="button" data-mode-target="pose"><span>⌯</span><b>Poses</b><small class="mode-version" data-mode-version="pose"></small></button>
+        <button class="mode-button" type="button" data-mode-target="gestures"><span>☝</span><b>Gestos</b><small class="mode-version" data-mode-version="gestures"></small></button>
+        <button class="mode-button" type="button" data-mode-target="academy"><span>◎</span><b>Treino</b><small class="mode-version" data-mode-version="academy"></small></button>
+        <button class="mode-button" type="button" data-mode-target="sequence"><span>⌘</span><b>Sequência</b><small class="mode-version" data-mode-version="sequence"></small></button>
+        <button class="mode-button" type="button" data-mode-target="aura"><span>✺</span><b>Aura</b><small class="mode-version" data-mode-version="aura"></small></button>
+        <button class="mode-button" type="button" data-mode-target="body"><span>◆</span><b>Corpo</b><small class="mode-version" data-mode-version="body"></small></button>
+        <button class="mode-button" type="button" data-mode-target="dance"><span>♫</span><b>Dança</b><small class="mode-version" data-mode-version="dance"></small></button>
+        <button class="mode-button" type="button" data-mode-target="stretch"><span>↟</span><b>Alongar</b><small class="mode-version" data-mode-version="stretch"></small></button>
+        <button class="mode-button" type="button" data-mode-target="saber"><span>╱</span><b>Sabre</b><small class="mode-version" data-mode-version="saber"></small></button>
+        <button class="mode-button" type="button" data-mode-target="libras"><span>☞</span><b>Libras</b><small class="mode-version" data-mode-version="libras"></small></button>
+        <button class="mode-button" type="button" data-mode-target="face"><span>◉</span><b>Rosto</b><small class="mode-version" data-mode-version="face"></small></button>
+      </nav>
+
+      <div class="floating-actions">
+        <button id="toolsButton" class="floating-button" type="button" aria-controls="toolsDrawer" aria-expanded="false"><span>⚙</span><b>Controles</b></button>
+        <button id="sensorsButton" class="floating-button" type="button" aria-controls="sensorsDrawer" aria-expanded="false"><span>⌁</span><b>Sensores</b></button>
+      </div>
+
+      <aside id="toolsDrawer" class="drawer surface" aria-hidden="true" aria-label="Controles do laboratório">
+        <div class="drawer-header"><div><small>PAINEL CONTEXTUAL</small><div class="drawer-title-line"><h2 id="toolsTitle">Holo Sandbox</h2><span id="activeModuleVersion" class="module-version-badge">v2.1.0</span></div><p id="activeModuleSummary" class="module-version-summary">Manipulação holográfica 3D.</p></div><button class="drawer-close" data-close-drawer="toolsDrawer" type="button" aria-label="Fechar controles">×</button></div>
+
+        <section class="mode-tools" data-tools-mode="explorer">
+          <label class="field-label">Exposição holográfica
+            <select id="explorerExhibitSelect">
+              <option value="solar-system">Sistema Solar</option>
+              <option value="earth-moon">Terra e Lua</option>
+              <option value="motherboard">Placa-mãe</option>
+              <option value="drone">Drone educacional</option>
+              <option value="robot">Robô articulado</option>
+              <option value="volcano">Vulcão em corte</option>
+              <option value="cave">Caverna cristalina</option>
+              <option value="world-map">Mapa holográfico</option>
+              <option value="landmarks">Monumentos do mundo</option>
+            </select>
+          </label>
+          <div class="explorer-category-row" id="explorerCategoryRow" aria-label="Categorias do Holo Explorer">
+            <button class="mini-button active" type="button" data-explorer-category="all">Todos</button>
+            <button class="mini-button" type="button" data-explorer-category="space">Espaço</button>
+            <button class="mini-button" type="button" data-explorer-category="technology">Tecnologia</button>
+            <button class="mini-button" type="button" data-explorer-category="earth">Terra</button>
+            <button class="mini-button" type="button" data-explorer-category="heritage">Lugares</button>
+          </div>
+          <div class="button-row explorer-actions">
+            <button id="previousExplorerButton" class="mini-button" type="button">Anterior</button>
+            <button id="nextExplorerButton" class="mini-button" type="button">Próxima</button>
+            <button id="explodeExplorerButton" class="mini-button" type="button">Vista explodida</button>
+            <button id="animateExplorerButton" class="mini-button active" type="button">Animação</button>
+            <button id="resetExplorerButton" class="mini-button" type="button">Centralizar</button>
+          </div>
+          <div id="explorerFacts" class="explorer-facts" aria-live="polite"></div>
+          <p class="tool-help">Pinça ou mão fechada segura a maquete. Duas mãos ampliam. Gire o punho ou deslize lateralmente para explorar.</p>
+        </section>
+
+        <section class="mode-tools" data-tools-mode="sandbox">
+          <label class="field-label">Objeto holográfico
+            <select id="objectSelect">
+              <option value="cube">Cubo</option><option value="sphere">Esfera</option><option value="pyramid">Pirâmide</option><option value="torus">Torus</option><option value="cylinder">Cilindro</option>
+            </select>
+          </label>
+          <div class="swatch-row" aria-label="Cores do objeto">
+            <button class="swatch active" data-color="#00e5ff" style="--swatch:#00e5ff" aria-label="Ciano"></button>
+            <button class="swatch" data-color="#a855f7" style="--swatch:#a855f7" aria-label="Roxo"></button>
+            <button class="swatch" data-color="#22c55e" style="--swatch:#22c55e" aria-label="Verde"></button>
+            <button class="swatch" data-color="#f97316" style="--swatch:#f97316" aria-label="Laranja"></button>
+            <button class="swatch" data-color="#ff4fd8" style="--swatch:#ff4fd8" aria-label="Rosa"></button>
+          </div>
+          <div class="button-row"><button id="resetObjectButton" class="mini-button" type="button">Centralizar</button><button id="autoRotateButton" class="mini-button active" type="button">Rotação automática</button></div>
+          <p class="tool-help">Pinça ou mão fechada segura o objeto. Duas mãos alteram a escala. A rotação do punho gira o holograma.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="catch">
+          <label class="field-label">Participantes
+            <select id="playersSelect"><option value="1">Uma pessoa</option><option value="2">Duas pessoas</option></select>
+          </label>
+          <label class="field-label">Modo de captura
+            <select id="captureModeSelect"><option value="close">Fechar a mão ou pinça</option><option value="touch">Encostar com a mão</option></select>
+          </label>
+          <div class="score-split"><span>P1 <b id="playerOneScore">0</b></span><span>P2 <b id="playerTwoScore">0</b></span></div>
+          <button id="restartGameButton" class="primary-button compact-button" type="button">Reiniciar missão</button>
+          <p class="tool-help">Com duas pessoas, cada jogador coleta as formas marcadas com sua cor usando os punhos rastreados pelo esqueleto.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="draw">
+          <div class="draw-controls"><label>Cor <input id="drawColor" type="color" value="#00e5ff" /></label><label>Espessura <input id="drawSize" type="range" min="2" max="22" value="7" /></label></div>
+          <div class="button-row"><button id="undoDrawButton" class="mini-button" type="button">Desfazer</button><button id="clearDrawButton" class="mini-button" type="button">Limpar</button><button id="saveDrawButton" class="mini-button" type="button">Salvar PNG</button></div>
+          <p class="tool-help">Pinça desenha. Mão fechada apaga. Deslizar para a esquerda desfaz; para a direita troca a cor.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="pose">
+          <button id="restartPoseButton" class="primary-button compact-button" type="button">Reiniciar sequência</button>
+          <p class="tool-help">O sistema compara ângulos de ombros, braços, quadril e pernas. Mantenha a pose até completar o indicador.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="gestures">
+          <button id="restartGesturesButton" class="primary-button compact-button" type="button">Reiniciar treinamento</button>
+          <p class="tool-help">O laboratório reconhece mão aberta, fechada, pinça, apontar, vitória, positivo, orientação vertical, horizontal e movimentos rápidos.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="academy">
+          <button id="restartAcademyButton" class="primary-button compact-button" type="button">Reiniciar academia</button>
+          <p class="tool-help">A trilha ensina e calibra mão aberta, punho, pinça, apontar, acenar, braços, agachamento, palmas e pulo.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="sequence">
+          <button id="restartSequenceButton" class="primary-button compact-button" type="button">Nova sequência</button>
+          <p class="tool-help">Espere o comando ser confirmado e retorne à posição neutra antes do próximo. A sequência cresce a cada rodada.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="aura">
+          <button id="resetAuraButton" class="primary-button compact-button" type="button">Reiniciar energia</button>
+          <p class="tool-help">Movimentos amplos carregam mais energia. Mãos ao alto, braços abertos, palmas e pulos ativam multiplicadores.</p>
+        </section>
+
+
+        <section class="mode-tools hidden" data-tools-mode="body">
+          <button id="restartBodyChallengeButton" class="primary-button compact-button" type="button">Reiniciar desafio</button>
+          <p class="tool-help">O jogo apresenta comandos de braços, pernas, agachamento, pulo e palmas. Afaste objetos e mantenha espaço seguro.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="dance">
+          <button id="restartDanceButton" class="primary-button compact-button" type="button">Nova coreografia</button>
+          <p class="tool-help">As sequências usam apenas movimentos e batidas visuais sintetizadas, sem músicas protegidas.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="stretch">
+          <button id="restartStretchButton" class="primary-button compact-button" type="button">Reiniciar rotina</button>
+          <p class="tool-help">Atividade educativa e recreativa. Faça movimentos confortáveis, sem dor e sem substituir orientação profissional.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="saber">
+          <button id="restartSaberButton" class="primary-button compact-button" type="button">Reiniciar missão</button>
+          <p class="tool-help">Os antebraços formam dois sabres virtuais. Não segure objetos reais e mantenha distância de outras pessoas.</p>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="libras">
+          <div class="libras-settings-grid">
+            <label class="field-label">Atividade
+              <select id="librasModeSelect">
+                <option value="learn">Aprender A–Z</option>
+                <option value="challenge">Desafio aleatório</option>
+                <option value="sequence">Sequência de letras</option>
+                <option value="word">Soletrar palavra</option>
+              </select>
+            </label>
+            <label class="field-label">Mão utilizada
+              <select id="librasHandSelect"><option value="auto">Automática</option><option value="right">Direita</option><option value="left">Esquerda</option></select>
+            </label>
+            <label class="field-label">Precisão
+              <select id="librasDifficultySelect"><option value="guided">Guiada</option><option value="standard" selected>Padrão</option><option value="precision">Precisão</option></select>
+            </label>
+          </div>
+          <div id="librasWordControls" class="libras-word-controls hidden">
+            <label class="field-label">Palavra para soletrar<input id="librasWordInput" type="text" maxlength="12" value="LIBRAS" autocomplete="off" /></label>
+            <button id="startLibrasWordButton" class="mini-button" type="button">Iniciar palavra</button>
+          </div>
+          <div class="button-row libras-action-row">
+            <button id="previousLibrasButton" class="mini-button" type="button">Anterior</button>
+            <button id="manualLibrasButton" class="mini-button" type="button">Confirmar com professor</button>
+            <button id="nextLibrasButton" class="mini-button" type="button">Próxima</button>
+          </div>
+          <div id="librasFingerGuide" class="libras-finger-guide" aria-label="Diagnóstico dos dedos"></div>
+          <div class="libras-stats-grid"><span>Sequência <b id="librasStreak">0×</b></span><span>Tentativas <b id="librasAttempts">0</b></span><span>Acertos <b id="librasHits">0</b></span></div>
+          <button id="restartLibrasButton" class="primary-button compact-button" type="button">Reiniciar Libras Lab</button>
+          <p class="tool-help">Treinador experimental do alfabeto manual. A datilologia é um recurso de soletração e não representa toda a Libras. Letras semelhantes e movimentos J/Z podem exigir confirmação do professor.</p>
+          <a class="reference-link" href="https://www.gov.br/ines/pt-br/central-de-conteudos/publicacoes-1/todas-as-publicacoes/alfabeto-manual-e-configuracao-de-maos" target="_blank" rel="noreferrer">Consultar referência oficial do INES ↗</a>
+        </section>
+
+        <section class="mode-tools hidden" data-tools-mode="face">
+          <div class="face-command-grid"><span><b>Boca</b><small>Amplia o reator</small></span><span><b>Sorriso</b><small>Altera a cor</small></span><span><b>Piscar</b><small>Cria pulso de energia</small></span><span><b>Cabeça</b><small>Gira em três direções</small></span></div>
+          <button id="calibrateFaceButton" class="mini-button" type="button">Calibrar posição neutra</button>
+          <p class="tool-help">Centralize o rosto e calibre. O modo detalha olhos, nariz, boca, contorno e orientação aproximada da cabeça.</p>
+        </section>
+
+        <hr />
+        <section class="general-tools">
+          <h3>Configurações gerais</h3>
+          <label class="field-label">Qualidade
+            <select id="qualitySelect"><option value="low">Econômica</option><option value="balanced" selected>Equilibrada</option><option value="high">Precisão</option></select>
+          </label>
+          <label class="range-label"><span>Sensibilidade da pinça</span><b id="sensitivityValue">100%</b><input id="sensitivityRange" type="range" min="0.72" max="1.4" step="0.02" value="1" /></label>
+          <label class="field-label">Visual corporal
+            <select id="bodyVisualSelect"><option value="hybrid">Avatar + esqueleto</option><option value="skeleton">Somente esqueleto</option><option value="avatar">Somente avatar</option></select>
+          </label>
+          <div class="toggle-grid">
+            <button id="cameraToggleButton" class="toggle-button" type="button">Câmera</button>
+            <button id="mirrorToggleButton" class="toggle-button active" type="button">Espelhar</button>
+            <button id="skeletonToggleButton" class="toggle-button active" type="button">Esqueleto</button>
+            <button id="gestureUiButton" class="toggle-button" type="button">Clique por gesto</button>
+            <button id="dwellToggleButton" class="toggle-button active" type="button">Clique por permanência</button>
+            <button id="helpButton" class="toggle-button" type="button">Ajuda</button>
+            <button id="versionDetailsButton" class="toggle-button" type="button">Versões</button>
+            <button id="appStoreDetailsButton" class="toggle-button" type="button">Apps VR</button>
+          </div>
+        </section>
+      </aside>
+
+      <aside id="sensorsDrawer" class="drawer sensor-drawer surface" aria-hidden="true" aria-label="Diagnóstico dos sensores">
+        <div class="drawer-header"><div><small>DIAGNÓSTICO EM TEMPO REAL</small><h2>Sensores e desempenho</h2></div><button class="drawer-close" data-close-drawer="sensorsDrawer" type="button" aria-label="Fechar sensores">×</button></div>
+        <div class="sensor-summary">
+          <div><small>PROCESSAMENTO</small><strong id="backendStatus">--</strong></div><div><small>ACELERADOR</small><strong id="acceleratorStatus">--</strong></div><div><small>RESOLUÇÃO IA</small><strong id="processingStatus">--</strong></div><div><small>ADAPTAÇÃO</small><strong id="adaptiveStatus">NORMAL</strong></div>
+        </div>
+        <h3>Mãos</h3>
+        <div class="sensor-cards">
+          <article><small>MÃO 1 <em data-sensor-version="hands"></em></small><b id="handOneGesture">não detectada</b><span id="handOneDetail">--</span></article>
+          <article><small>MÃO 2 <em data-sensor-version="hands"></em></small><b id="handTwoGesture">não detectada</b><span id="handTwoDetail">--</span></article>
+        </div>
+        <h3>Corpo e rosto</h3>
+        <div class="sensor-cards">
+          <article><small>PESSOAS <em data-sensor-version="poseSensor"></em></small><b id="peopleStatus">0</b><span id="bodyStatus">corpo não detectado</span></article>
+          <article><small>ROSTO <em data-sensor-version="faceSensor"></em></small><b id="faceStatus">não detectado</b><span id="faceDetail">--</span></article>
+        </div>
+        <h3>Taxas de atualização</h3>
+        <div class="sensor-table">
+          <span>Mãos <b id="handHz">0 Hz</b><i id="handMs">0 ms</i></span>
+          <span>Corpo <b id="poseHz">0 Hz</b><i id="poseMs">0 ms</i></span>
+          <span>Rosto <b id="faceHz">0 Hz</b><i id="faceMs">0 ms</i></span>
+          <span>Total <b id="recognitionHz">0 Hz</b><i id="roundTripMs">0 ms</i></span>
+        </div>
+        <p class="sensor-note">O modo automático prioriza o sensor necessário para a atividade. Executar rosto, corpo e mãos em precisão máxima simultaneamente reduziria o FPS, principalmente no celular.</p>
+      </aside>
+
+      <div id="drawerBackdrop" class="drawer-backdrop" aria-hidden="true"></div>
+    </main>
+
+    <dialog id="helpDialog" class="help-dialog surface">
+      <button id="closeHelpButton" class="dialog-close" type="button" aria-label="Fechar">×</button>
+      <div class="eyebrow">GUIA RÁPIDO</div>
+      <h2>Gestos e movimentos reconhecidos</h2>
+      <div class="help-grid">
+        <article><span>☝</span><b>Apontar</b><small>Move o cursor e destaca controles.</small></article>
+        <article><span>⌁</span><b>Pinça</b><small>Seleciona, segura e desenha.</small></article>
+        <article><span>✊</span><b>Mão fechada</b><small>Captura formas e apaga desenhos.</small></article>
+        <article><span>✋</span><b>Mão aberta</b><small>Solta objetos e permite movimentos dinâmicos.</small></article>
+        <article><span>↔</span><b>Deslizar</b><small>Executa comandos laterais em alguns modos.</small></article>
+        <article><span>◫</span><b>Duas mãos</b><small>Aumenta e reduz objetos 3D.</small></article>
+        <article><span>⌯</span><b>Corpo</b><small>Compara poses e controla jogos.</small></article>
+        <article><span>◉</span><b>Rosto</b><small>Reconhece boca, olhos, sorriso e inclinação.</small></article>
+      </div>
+      <p>Para melhor rastreamento, use iluminação frontal, limpe a lente, evite contraluz e deixe as mãos inteiras visíveis. Uma webcam comum estima profundidade; ela não possui o sensor dedicado do Kinect.</p>
+    </dialog>
+
+
+    <dialog id="appStoreDialog" class="app-store-dialog surface">
+      <button id="closeAppStoreButton" class="dialog-close" type="button" aria-label="Fechar aplicativos VR">×</button>
+      <header class="store-heading">
+        <div>
+          <div class="eyebrow">CENTRAL DE EXPERIÊNCIAS 3D</div>
+          <h2>Aplicativos VR e ferramentas holográficas</h2>
+          <p>Use as experiências Web diretamente no navegador ou baixe aplicativos Android preparados para funcionamento offline.</p>
+        </div>
+        <span class="release-badge" id="appStoreVersionBadge">v1.0.0</span>
+      </header>
+
+      <section class="store-platform-summary" aria-label="Resumo das plataformas">
+        <article><span>◎</span><div><small>WEB</small><b id="webAppCount">0 disponíveis</b><p>Câmera, sensores e hologramas no navegador.</p></div></article>
+        <article><span>▣</span><div><small>ANDROID</small><b id="androidAppCount">0 disponíveis</b><p>APKs para celular e experiências VR offline.</p></div></article>
+        <article><span>⌁</span><div><small>OFFLINE</small><b>Sem backend</b><p>Dados e processamento permanecem no dispositivo.</p></div></article>
+      </section>
+
+      <div class="store-toolbar">
+        <nav id="appStoreFilters" class="store-filters" aria-label="Filtrar aplicativos"></nav>
+        <label class="store-search"><span>⌕</span><input id="appStoreSearch" type="search" placeholder="Buscar aplicativo ou recurso" autocomplete="off" /></label>
+      </div>
+
+      <div class="store-layout">
+        <section>
+          <div id="appStoreResultText" class="store-result-text" aria-live="polite"></div>
+          <div id="appStoreGrid" class="app-store-grid"></div>
+        </section>
+        <aside id="appStoreDetails" class="app-details" aria-live="polite"></aside>
+      </div>
+
+      <footer class="store-footer">
+        <span>Os APKs são baixados somente quando você escolhe instalar.</span>
+        <span>Android poderá solicitar autorização para instalar aplicativos externos.</span>
+      </footer>
+    </dialog>
+
+    <dialog id="versionDialog" class="version-dialog surface">
+      <button id="closeVersionButton" class="dialog-close" type="button" aria-label="Fechar">×</button>
+      <div class="version-dialog-heading">
+        <div><div class="eyebrow">INFORMAÇÕES DA APLICAÇÃO</div><h2>Versões, novidades e créditos</h2><p id="versionDialogSummary">Catálogo modular do HoloMotion Lab DS.</p></div>
+        <span id="versionDialogBadge" class="release-badge">v4.3.0</span>
+      </div>
+      <nav class="version-tabs" aria-label="Seções de versionamento">
+        <button class="version-tab active" type="button" data-version-tab="overview">Resumo</button>
+        <button class="version-tab" type="button" data-version-tab="modules">Módulos</button>
+        <button class="version-tab" type="button" data-version-tab="technology">Tecnologias</button>
+        <button class="version-tab" type="button" data-version-tab="history">Histórico</button>
+        <button class="version-tab" type="button" data-version-tab="credits">Créditos</button>
+      </nav>
+      <div class="version-panels">
+        <section class="version-panel active" data-version-panel="overview"><div id="versionOverview"></div></section>
+        <section class="version-panel" data-version-panel="modules"><div id="versionModules" class="version-list"></div></section>
+        <section class="version-panel" data-version-panel="technology"><div id="versionTechnologies" class="technology-list"></div></section>
+        <section class="version-panel" data-version-panel="history"><div id="versionHistory" class="release-history"></div></section>
+        <section class="version-panel" data-version-panel="credits"><div id="versionCredits" class="credits-content"></div></section>
+      </div>
+    </dialog>
+  </div>
+
+  <script type="module" src="./src/store-ui.js"></script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

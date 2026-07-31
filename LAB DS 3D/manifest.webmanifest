@@ -1,0 +1,24 @@
+{
+  "name": "HoloMotion Lab DS 4.5.2",
+  "short_name": "HoloMotion",
+  "description": "Plataforma holográfica modular com jogos corporais, Libras experimental, Vision Scanner de objetos e ambiente, sensores Web e aplicativos Android VR offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#030711",
+  "theme_color": "#050b16",
+  "orientation": "any",
+  "categories": [
+    "education",
+    "games",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
